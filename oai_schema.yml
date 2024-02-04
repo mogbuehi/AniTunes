@@ -1,0 +1,148 @@
+openapi: 3.1.0
+info:
+  title: Spotify Playlist API
+  description: This API interacts with Spotify to create and manage playlists based on anime preferences.
+  version: 1.0.0
+servers:
+  - url: https://api.spotify.com/v1
+    description: Spotify Web API server
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.spotify.com/authorize
+          tokenUrl: https://accounts.spotify.com/api/token
+          scopes:
+            playlist-modify-public: Modify user's public playlists
+            playlist-modify-private: Modify user's private playlists
+            user-read-private: Read private user information
+            user-read-email: Read user's email address
+  schemas: {}
+security:
+  - OAuth2:
+      - playlist-modify-public
+      - playlist-modify-private
+      - user-read-private
+      - user-read-email
+paths:
+  /me:
+    get:
+      operationId: getCurrentUserProfile
+      summary: Get current user's profile
+      responses:
+        "200":
+          description: Profile information for current user
+      security:
+        - OAuth2:
+            - user-read-private
+  /me/playlists:
+    get:
+      operationId: getCurrentUserPlaylists
+      summary: Get a list of the playlists owned or followed by the current Spotify user
+      responses:
+        "200":
+          description: List of current user's playlists
+      security:
+        - OAuth2:
+            - playlist-modify-public
+            - playlist-modify-private
+  /users/{user_id}/playlists:
+    post:
+      operationId: createPlaylist
+      summary: Create a new playlist
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: The user's Spotify ID
+          schema:
+            type: string
+            example: smedjan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Anime Hits
+                description:
+                  type: string
+                  example: Your favorite anime tracks
+                public:
+                  type: boolean
+                  example: true
+      responses:
+        "201":
+          description: Successfully created playlist
+      security:
+        - OAuth2:
+            - playlist-modify-public
+            - playlist-modify-private
+
+
+  /search:
+    get:
+      operationId: searchItems
+      summary: Search for items based on query
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: >
+            Search query with optional field filters (album, artist, track, year, upc, tag:hipster, tag:new, isrc, genre). Filters like artist/year apply to albums, artists, tracks; album to albums/tracks; genre to artists/tracks; isrc/track to tracks; upc, tag:new, tag:hipster to albums. Example: `q=remaster track:Doxy artist:Miles Davis`.
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          description: "Specify types to search (album, artist, playlist, track, show, episode, audiobook). Example: `q=abacab&type=album,track`."
+          schema:
+            type: string
+            example: "album,artist,playlist,track,show,episode,audiobook"
+        - name: market
+          in: query
+          description: "ISO 3166-1 alpha-2 country code to filter content available in that market. Overrides user country if valid access token provided."
+          schema:
+            type: string
+            example: ES
+      responses:
+        "200":
+          description: Search results returned
+
+
+  /playlists/{playlist_id}/tracks:
+    post:
+      operationId: addTracksToPlaylist
+      summary: Add tracks to a playlist
+      parameters:
+        - name: playlist_id
+          in: path
+          required: true
+          description: The Spotify ID for the playlist
+          schema:
+            type: string
+            example: 37i9dQZF1DX5OUjSS1OMgV
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uris:
+                  type: array
+                  items:
+                    type: string
+                    example: spotify:track:4cOdK2wGLETKBW3PvgPWqT
+      responses:
+        "201":
+          description: Tracks added to the playlist
+      security:
+        - OAuth2:
+            - playlist-modify-public
+            - playlist-modify-private
